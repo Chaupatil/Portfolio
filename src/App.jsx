@@ -123,38 +123,6 @@ function HeroObject() {
   );
 }
 
-// function Hero3D() {
-//   return (
-//     <Canvas camera={{ position: [0, 0, 3], fov: 60 }}>
-//       <color attach="background" args={["#000015"]} />
-//       <ambientLight intensity={0.5} />
-//       <directionalLight position={[10, 10, 5]} intensity={1.0} />
-//       <spotLight
-//         position={[0, 5, 5]}
-//         angle={0.5}
-//         penumbra={1}
-//         intensity={0.8}
-//         color="#ADD8E6"
-//       />
-//       <pointLight position={[0, 0, 0]} intensity={2.0} color="#8A2BE2" />
-
-//       <EffectComposer>
-//         <Bloom
-//           luminanceThreshold={0.1}
-//           luminanceSmoothing={0.9}
-//           height={300}
-//           intensity={1.2}
-//         />
-//       </EffectComposer>
-
-//       <Stars radius={100} depth={50} count={3000} factor={4} fade />
-//       <HeroObject />
-
-//       <OrbitControls enableZoom={false} />
-//     </Canvas>
-//   );
-// }
-
 function Hero3D() {
   return (
     <Canvas camera={{ position: [0, 0, 6], fov: 60 }}>
