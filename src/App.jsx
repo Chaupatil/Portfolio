@@ -185,7 +185,12 @@ function Hero3D() {
       <Planets />
 
       {/* Controls */}
-      <OrbitControls enableZoom={false} />
+      <OrbitControls
+        enableZoom={true}
+        minDistance={3}
+        maxDistance={10}
+        zoomSpeed={1.0}
+      />
     </Canvas>
   );
 }
