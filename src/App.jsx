@@ -16,6 +16,7 @@ import {
 import { motion } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, MeshDistortMaterial, TorusKnot } from "@react-three/drei";
+import emailjs from "emailjs-com";
 
 function HeroObject() {
   const meshRef = useRef();
@@ -101,6 +102,11 @@ export default function App() {
   const [formStatus, setFormStatus] = useState("");
   const [activeSection, setActiveSection] = useState("home");
   const currentYear = new Date().getFullYear();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
 
   // Apply dark mode to document root
   useEffect(() => {
@@ -141,12 +147,29 @@ export default function App() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
     setFormStatus("sending");
-    setTimeout(() => {
-      setFormStatus("success");
-      setTimeout(() => setFormStatus(""), 3000);
-    }, 1000);
+
+    emailjs
+      .sendForm(
+        "service_nf3ogxd", // Your EmailJS Service ID
+        "template_1bksbkp", // Replace with your actual Template ID
+        e.target, // Form element to auto-capture values
+        "fbMFDsAR8fBPMgTYm" // Your EmailJS public key (user_XXXX or public_XXXX)
+      )
+      .then(
+        (result) => {
+          console.log(result.text);
+          setFormStatus("success");
+          setTimeout(() => setFormStatus(""), 3000);
+        },
+        (error) => {
+          console.error(error.text);
+          setFormStatus("error");
+        }
+      );
   };
 
   const skills = [
@@ -576,36 +599,53 @@ export default function App() {
               </div>
             </div>
             <div className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
-                />
-              </div>
-              <div>
-                <input
-                  type="email"
-                  placeholder="Your Email"
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
-                />
-              </div>
-              <div>
-                <textarea
-                  placeholder="Your Message"
-                  rows="4"
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all resize-none"
-                ></textarea>
-              </div>
-              <motion.button
-                onClick={handleSubmit}
-                disabled={formStatus === "sending"}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-xl transition-shadow duration-300 disabled:opacity-50"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {formStatus === "sending" ? "Sending..." : "Send Message"}
-              </motion.button>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    name="user_name" // ✅ Required for EmailJS
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+                  />
+                </div>
+                <div className="mb-4">
+                  <input
+                    type="email"
+                    name="user_email" // ✅ Required for EmailJS
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+                  />
+                </div>
+                <div className="mb-6">
+                  <textarea
+                    name="message" // ✅ Required for EmailJS
+                    placeholder="Your Message"
+                    rows="4"
+                    value={formData.message}
+                    onChange={(e) =>
+                      setFormData({ ...formData, message: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all resize-none"
+                  ></textarea>
+                </div>
+                <motion.button
+                  type="submit" // ✅ Important! Don't use onClick here
+                  disabled={formStatus === "sending"}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-xl transition-shadow duration-300 disabled:opacity-50"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {formStatus === "sending" ? "Sending..." : "Send Message"}
+                </motion.button>
+              </form>
               {formStatus === "success" && (
                 <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-lg text-center animate-pulse">
                   Message sent successfully!
