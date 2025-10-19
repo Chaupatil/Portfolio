@@ -4,7 +4,10 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import styled, { keyframes } from "styled-components";
 import { Howl } from "howler";
+import { Stars } from "./Stars";
+import { ShootingStars } from "./ShootingStars";
 
+// Animations for Container and Button
 const glowPulse = keyframes`
   0%, 100% {
     box-shadow: 0 0 10px #6e49f7, inset 0 0 6px #2e1e7b;
@@ -21,10 +24,12 @@ const bounce = keyframes`
   100% { transform: scale(1); }
 `;
 
+// Styled components with improvements for mobile
 const Container = styled.div`
   pointer-events: auto;
   user-select: none;
-  width: 250px;
+  width: 100%;
+  max-width: 250px;
   padding: 12px 18px;
   background: linear-gradient(
     145deg,
@@ -42,14 +47,16 @@ const Container = styled.div`
   letter-spacing: 1.2px;
   text-shadow: 0 0 4px #7b6eff;
   animation: ${glowPulse} 3s ease-in-out infinite;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 
   @media (max-width: 600px) {
-    width: 180px;
+    max-width: 180px;
     font-size: 0.65rem;
   }
 
   @media (max-width: 400px) {
-    width: 140px;
+    max-width: 140px;
     font-size: 0.6rem;
   }
 `;
@@ -88,6 +95,7 @@ const Button = styled.button`
   }
 `;
 
+// Sounds
 const whooshSound = new Howl({
   src: ["/assets/sounds/whoosh.mp3"],
   volume: 0.5,
@@ -98,9 +106,29 @@ const popSound = new Howl({
   volume: 0.5,
 });
 
+// Custom hook for media query detection
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) setMatches(media.matches);
+
+    const listener = () => setMatches(media.matches);
+    media.addListener(listener);
+    return () => media.removeListener(listener);
+  }, [query, matches]);
+
+  return matches;
+}
+
 export default function Spaceman(props) {
   const { scene } = useGLTF("/assets/models/astronaut.glb");
   const ref = useRef();
+
+  // Media queries for responsiveness
+  const isMobile = useMediaQuery("(max-width: 600px)");
+  const isTiny = useMediaQuery("(max-width: 400px)");
 
   // State
   const [escaped, setEscaped] = useState(false);
@@ -273,7 +301,13 @@ export default function Spaceman(props) {
         />
       </group>
 
-      <Html position={[0, 2, 0]} distanceFactor={10} occlude>
+      <Html
+        position={isTiny ? [0, 1.2, 0] : isMobile ? [0, 1.5, 0] : [0, 2, 0]}
+        distanceFactor={isMobile ? 8 : 10}
+        occlude
+        transform
+        zIndexRange={[100, 0]}
+      >
         <Container>
           <p>{message}</p>
           {showButton && escapeCount < maxEscapes && (
