@@ -1,58 +1,42 @@
-// Hero3D.jsx
-import React, { useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Text3D, Center } from "@react-three/drei";
-import * as THREE from "three";
-import { easing } from "maath"; // optional for smoother movement
-
-const DancingLetter = ({ letter, index }) => {
-  const ref = useRef();
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    // Animate position up/down like dancing
-    ref.current.position.y = Math.sin(t * 2 + index) * 0.2;
-    // Rotate a bit for fun
-    ref.current.rotation.y = Math.sin(t * 1.5 + index) * 0.1;
-  });
-
-  return (
-    <Text3D
-      ref={ref}
-      font="/fonts/helvetiker_regular.typeface.json"
-      size={0.5}
-      height={0.1}
-      curveSegments={12}
-      bevelEnabled
-      bevelThickness={0.03}
-      bevelSize={0.02}
-      bevelSegments={5}
-    >
-      {letter}
-      <meshStandardMaterial color="#60A5FA" metalness={0.4} roughness={0.2} />
-    </Text3D>
-  );
-};
+// src/Hero3D.jsx
+import React from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Stars, Float } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import Spaceman from "./components/Spaceman";
+import Planets from "./components/Planets";
 
 export default function Hero3D() {
-  const name = "Shravan Patil".split("");
-
   return (
-    <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[5, 5, 5]} intensity={1.2} />
-      <pointLight position={[-5, -5, -5]} intensity={1} color="#60A5FA" />
+    <Canvas camera={{ position: [0, 0, 6], fov: 60 }}>
+      {/* Background & Lighting */}
+      <color attach="background" args={["#000015"]} />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 5, 5]} intensity={1} color="#ffffff" />
+      <pointLight position={[-5, -5, -5]} intensity={2} color="#8A2BE2" />
 
-      <Center>
-        {name.map((letter, i) => (
-          <group key={i} position={[i * 0.6 - name.length * 0.3, 0, 0]}>
-            <DancingLetter
-              letter={letter === " " ? "\u00A0" : letter}
-              index={i}
-            />
-          </group>
-        ))}
-      </Center>
+      {/* Stars */}
+      <Stars radius={100} depth={50} count={3000} factor={4} fade />
+
+      {/* Effects */}
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.9}
+          intensity={1.2}
+        />
+      </EffectComposer>
+
+      {/* Floating Spaceman */}
+      <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1.2}>
+        <Spaceman />
+      </Float>
+
+      {/* Planets & Moons */}
+      <Planets />
+
+      {/* Controls */}
+      <OrbitControls enableZoom={false} />
     </Canvas>
   );
 }

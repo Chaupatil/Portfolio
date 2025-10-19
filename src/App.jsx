@@ -14,59 +14,178 @@ import {
   Cpu,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, MeshDistortMaterial, TorusKnot } from "@react-three/drei";
+import {
+  Float,
+  MeshDistortMaterial,
+  TorusKnot,
+  Stars,
+  OrbitControls,
+  Html,
+} from "@react-three/drei";
 import emailjs from "emailjs-com";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useSpring, a } from "@react-spring/three";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { Vector3 } from "three";
+import useSound from "use-sound";
+import vertexShader from "./shaders/vertex.glsl";
+import fragmentShader from "./shaders/fragment.glsl";
+import Spaceman from "./components/Spaceman";
+import Planets from "./components/Planets";
 
-function HeroObject() {
-  const meshRef = useRef();
-
-  // Make the object follow the mouse and subtly pulsate
-  useFrame((state) => {
-    if (meshRef.current) {
-      // Mouse interaction for rotation
-      meshRef.current.rotation.x = state.mouse.y * 0.2;
-      meshRef.current.rotation.y = state.mouse.x * 0.2;
-
-      // Subtle pulsation effect
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.05; // Adjust speed and intensity
-      meshRef.current.scale.set(scale, scale, scale);
+function CustomShaderMaterial({ hover }) {
+  const shaderRef = useRef();
+  useFrame(({ clock }) => {
+    if (shaderRef.current) {
+      shaderRef.current.uniforms.uTime.value = clock.elapsedTime;
+      shaderRef.current.uniforms.uHover.value = hover ? 1.0 : 0.0;
     }
   });
 
   return (
-    // Keep Float for gentle overall movement
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={1.0}>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[1, 64, 64]} /> {/* Smooth sphere */}
-        <meshStandardMaterial
-          color="#8A2BE2" // A nice violet color, can be changed
-          roughness={0.2}
-          metalness={0.8}
-        />
-      </mesh>
-    </Float>
+    <shaderMaterial
+      ref={shaderRef}
+      attach="material"
+      vertexShader={vertexShader}
+      fragmentShader={fragmentShader}
+      uniforms={{
+        uTime: { value: 0 },
+        uHover: { value: 0 },
+      }}
+      transparent
+    />
   );
 }
 
+function ParticleTrail({ target }) {
+  const meshRef = useRef();
+  const positions = Array(100)
+    .fill()
+    .map(() => new Vector3());
+
+  useFrame(() => {
+    if (!meshRef.current || !target.current) return;
+    positions.pop();
+    positions.unshift(target.current.position.clone());
+
+    meshRef.current.geometry.setFromPoints(positions);
+  });
+
+  return (
+    <line ref={meshRef}>
+      <bufferGeometry />
+      <lineBasicMaterial color="#8A2BE2" transparent opacity={0.4} />
+    </line>
+  );
+}
+
+function HeroObject() {
+  const meshRef = useRef();
+  const [hovered, setHovered] = useState(false);
+  const [clicked, setClicked] = useState(false);
+  const [play] = useSound("/sounds/click.mp3", { volume: 0.4 });
+
+  const { scale } = useSpring({
+    scale: clicked ? 1.2 : 1.0,
+    config: { mass: 1, tension: 300, friction: 10 },
+    onRest: () => setClicked(false),
+  });
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x = state.mouse.y * 0.2;
+      meshRef.current.rotation.y = state.mouse.x * 0.2;
+
+      const pulsate = 1 + Math.sin(state.clock.elapsedTime * 3) * 0.03;
+      meshRef.current.scale.setScalar(pulsate);
+    }
+  });
+
+  return (
+    <>
+      <Float speed={2} rotationIntensity={0.4} floatIntensity={1.0}>
+        <a.mesh
+          ref={meshRef}
+          scale={scale}
+          onPointerOver={() => setHovered(true)}
+          onPointerOut={() => setHovered(false)}
+          onClick={() => {
+            setClicked(true);
+            play();
+          }}
+        >
+          <sphereGeometry args={[1, 64, 64]} />
+          <CustomShaderMaterial hover={hovered} />
+        </a.mesh>
+      </Float>
+      <ParticleTrail target={meshRef} />
+    </>
+  );
+}
+
+// function Hero3D() {
+//   return (
+//     <Canvas camera={{ position: [0, 0, 3], fov: 60 }}>
+//       <color attach="background" args={["#000015"]} />
+//       <ambientLight intensity={0.5} />
+//       <directionalLight position={[10, 10, 5]} intensity={1.0} />
+//       <spotLight
+//         position={[0, 5, 5]}
+//         angle={0.5}
+//         penumbra={1}
+//         intensity={0.8}
+//         color="#ADD8E6"
+//       />
+//       <pointLight position={[0, 0, 0]} intensity={2.0} color="#8A2BE2" />
+
+//       <EffectComposer>
+//         <Bloom
+//           luminanceThreshold={0.1}
+//           luminanceSmoothing={0.9}
+//           height={300}
+//           intensity={1.2}
+//         />
+//       </EffectComposer>
+
+//       <Stars radius={100} depth={50} count={3000} factor={4} fade />
+//       <HeroObject />
+
+//       <OrbitControls enableZoom={false} />
+//     </Canvas>
+//   );
+// }
+
 function Hero3D() {
   return (
-    <Canvas camera={{ position: [0, 0, 3] }}>
-      <ambientLight intensity={0.5} />
-      {/* Directional light from top-right for general scene illumination */}
-      <directionalLight position={[10, 10, 5]} intensity={1.0} />
-      {/* Spot light for more focused highlight */}
-      <spotLight
-        position={[0, 5, 5]}
-        angle={0.5}
-        penumbra={1}
-        intensity={0.8}
-        color="#ADD8E6" // Light blue highlight
-      />
-      {/* Point light to give the orb an internal glow, matching its color */}
-      <pointLight position={[0, 0, 0]} intensity={1.5} color="#8A2BE2" />
+    <Canvas camera={{ position: [0, 0, 6], fov: 60 }}>
+      {/* Background & Lighting */}
+      <color attach="background" args={["#000015"]} />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 5, 5]} intensity={1} color="#ffffff" />
+      <pointLight position={[-5, -5, -5]} intensity={2} color="#8A2BE2" />
 
-      <HeroObject />
+      {/* Stars */}
+      <Stars radius={100} depth={50} count={3000} factor={4} fade />
+
+      {/* Effects */}
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.2}
+          luminanceSmoothing={0.9}
+          intensity={1.2}
+        />
+      </EffectComposer>
+
+      {/* Floating Spaceman */}
+      <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1.2}>
+        <Spaceman />
+      </Float>
+
+      {/* Planets & Moons */}
+      <Planets />
+
+      {/* Controls */}
+      <OrbitControls enableZoom={false} />
     </Canvas>
   );
 }
@@ -351,9 +470,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center space-y-8">
             {/* --- REPLACED STATIC DIV WITH 3D COMPONENT --- */}
-            <div className="w-56 h-56 mx-auto">
+            <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] mx-auto cursor-pointer">
               <Hero3D />
             </div>
+
             {/* --- END REPLACEMENT --- */}
 
             <h1 className="text-5xl sm:text-7xl font-bold">
@@ -417,6 +537,7 @@ export default function App() {
           </div>
         </div>
       </section>
+
       {/* About Section */}
       <section
         id="about"
@@ -524,7 +645,7 @@ export default function App() {
             {projects.map((project, index) => (
               <motion.div
                 key={index}
-                className="group relative bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                className="group relative bg-white dark:bg-gray-800 rounded-2xl cursor-pointer overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
                 variants={itemFadeInUp}
                 whileHover={{ y: -8, scale: 1.03 }}
               >
@@ -558,6 +679,7 @@ export default function App() {
           </motion.div>
         </motion.div>
       </section>
+
       {/* Contact Section */}
       <section
         id="contact"
@@ -664,6 +786,7 @@ export default function App() {
           </div>
         </motion.div>
       </section>
+
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto text-center">
