@@ -108,6 +108,11 @@ export default function App() {
     message: "",
   });
 
+  const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+  const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+  const TO_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TO_TEMPLATE_ID;
+  const REPLY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_REPLY_TEMPLATE_ID;
+
   // Apply dark mode to document root
   useEffect(() => {
     if (darkMode) {
@@ -154,18 +159,18 @@ export default function App() {
     // Send to you
     emailjs
       .sendForm(
-        "service_nf3ogxd",
-        "template_n6l00gt", // You receive their message
+        SERVICE_ID,
+        TO_TEMPLATE_ID, // You receive their message
         e.target,
-        "fbMFDsAR8fBPMgTYm"
+        PUBLIC_KEY
       )
       .then(() => {
         // Send auto-reply to user
         emailjs.sendForm(
-          "service_nf3ogxd",
-          "template_1bksbkp", // Auto-reply to them
+          SERVICE_ID,
+          REPLY_TEMPLATE_ID, // Auto-reply to them
           e.target,
-          "fbMFDsAR8fBPMgTYm"
+          PUBLIC_KEY
         );
         setFormStatus("success");
         setTimeout(() => setFormStatus(""), 3000);
