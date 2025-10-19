@@ -149,27 +149,31 @@ export default function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     setFormStatus("sending");
 
+    // Send to you
     emailjs
       .sendForm(
-        "service_nf3ogxd", // Your EmailJS Service ID
-        "template_1bksbkp", // Replace with your actual Template ID
-        e.target, // Form element to auto-capture values
-        "fbMFDsAR8fBPMgTYm" // Your EmailJS public key (user_XXXX or public_XXXX)
+        "service_nf3ogxd",
+        "template_n6l00gt", // You receive their message
+        e.target,
+        "fbMFDsAR8fBPMgTYm"
       )
-      .then(
-        (result) => {
-          console.log(result.text);
-          setFormStatus("success");
-          setTimeout(() => setFormStatus(""), 3000);
-        },
-        (error) => {
-          console.error(error.text);
-          setFormStatus("error");
-        }
-      );
+      .then(() => {
+        // Send auto-reply to user
+        emailjs.sendForm(
+          "service_nf3ogxd",
+          "template_1bksbkp", // Auto-reply to them
+          e.target,
+          "fbMFDsAR8fBPMgTYm"
+        );
+        setFormStatus("success");
+        setTimeout(() => setFormStatus(""), 3000);
+      })
+      .catch((error) => {
+        console.error(error);
+        setFormStatus("error");
+      });
   };
 
   const skills = [
